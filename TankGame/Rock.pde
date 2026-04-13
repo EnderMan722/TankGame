@@ -15,8 +15,8 @@ class Rock {
     do {
       valid = true;
 
-      x = int(random(width));
-      y = int(random(height));
+      x = int(random(width-10));
+      y = int(random(height-10));
 
       // Check distance from tank
       if (dist(x, y, tank.x, tank.y) < minDistTank) {
@@ -31,7 +31,6 @@ class Rock {
         }
       }
     } while (!valid);
-    
   }
 
 

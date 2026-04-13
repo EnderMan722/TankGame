@@ -30,7 +30,7 @@ class Bullet {
     y += sin(angle) * speed;
   }
 
-  boolean offSceen() {
+  boolean offScreen() {
     if (x < 0-w/2 || x > width+w/2 || y < 0-w/2 || y> height+w/2) {
       return true;
     } else {

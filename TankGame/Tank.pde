@@ -2,7 +2,7 @@ class Tank {
   // Member variables
   float x, y;
   float angle;
-  float speed, health;
+  float speed, baseSpeed, health;
   int w, h;
   PImage tankImage;
 
@@ -11,7 +11,8 @@ class Tank {
   Tank(float x, float y) {
     this.x = x;
     this.y = y;
-    speed = 2;
+    baseSpeed = 2;
+    speed = baseSpeed;
     health = 100;
     w = 100;
     h = 100;

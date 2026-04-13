@@ -1,291 +1,301 @@
-// Ender Hale | Tank Game | April 1st
+// Ender Hale | Tank Game | FIXED EXPLOSION SYSTEM
 
 import processing.sound.*;
+
 Tank tank;
+int bulletDamage;
+int baseDamage;
+
 ArrayList<Rock> rocks = new ArrayList<Rock>();
 ArrayList<EnemyTank> enemies = new ArrayList<EnemyTank>();
 ArrayList<Bullet> bullets = new ArrayList<Bullet>();
+ArrayList<PowerUp> powups = new ArrayList<PowerUp>();
+
 boolean upPressed, downPressed, leftPressed, rightPressed;
-boolean gameOver, start;
-PImage explosion, background;
+boolean gameOverState, start;
+
+PImage explosion, bgImg;
 SoundFile boom;
-Timer rockTimer, enemyTimer;
-// Explosion variables
+
+Timer rockTimer, enemyTimer, puTimer;
+Timer sTimer, dTimer;
+
+boolean speedOn, damageOn;
+
+// ===== EXPLOSION SYSTEM =====
 boolean showExplosion = false;
 int explosionStartTime = 0;
 float explosionX, explosionY;
+float explosionSize = 100;
+
 int score;
 
 void setup() {
   size(750, 750);
+
   tank = new Tank(width/2, height/2);
 
-  rockTimer = new Timer(800);
-  rockTimer.start();
-  enemyTimer = new Timer(500);
-  enemyTimer.start();
+  baseDamage = 35;
+  bulletDamage = baseDamage;
 
-  // Gameover/start variables
-  gameOver = false;
+  rockTimer = new Timer(800);
+  enemyTimer = new Timer(500);
+  puTimer = new Timer(1000);
+
+  rockTimer.start();
+  enemyTimer.start();
+  puTimer.start();
+
+  sTimer = new Timer(5000);
+  dTimer = new Timer(5000);
+
+  gameOverState = false;
   start = false;
+
   boom = new SoundFile(this, "boom.wav");
+
   explosion = loadImage("explosion.png");
 
-  // Background
-  background = loadImage("background.png");
-  background.resize(width, height);
+  bgImg = loadImage("background.png");
+  bgImg.resize(width, height);
+
   score = 0;
-
-  // Booleans
-  upPressed = false;
-  downPressed = false;
-  leftPressed = false;
-  rightPressed = false;
 }
-
-
-
-
 
 void draw() {
+
   if (!start) {
     startScreen();
-  } else {
-    
-    imageMode(CENTER);
-    background(background);
-    infoPanel();
-    
-    
-    tank.move();
-    tank.display();
+    return;
+  }
 
-    // Distribute rocks on a timer
-    if (rockTimer.isFinished()) {
-      rocks.add(new Rock());
-      rockTimer.start();
+  if (gameOverState) {
+    gameOverScreen();
+    return;
+  }
+
+  imageMode(CENTER);
+  image(bgImg, width/2, height/2);
+
+  infoPanel();
+
+  tank.move();
+  tank.display();
+
+  // ================= ROCKS =================
+  if (rockTimer.isFinished()) {
+    rocks.add(new Rock());
+    rockTimer.start();
+  }
+
+  for (int i = rocks.size()-1; i >= 0; i--) {
+    Rock r = rocks.get(i);
+    r.display();
+
+    if (tank.collide(r)) {
+      tank.health -= 10;
+      rocks.remove(i);
+
+      if (tank.health <= 0) gameOverState = true;
+    }
+  }
+
+  // ================= ENEMIES =================
+  if (enemyTimer.isFinished()) {
+    enemies.add(new EnemyTank());
+    enemyTimer.start();
+  }
+
+  for (int i = enemies.size()-1; i >= 0; i--) {
+    EnemyTank e = enemies.get(i);
+
+    e.move();
+    e.display();
+
+    if (tank.collide(e)) {
+      tank.health -= 10;
+      enemies.remove(i);
+
+      if (tank.health <= 0) gameOverState = true;
+    }
+  }
+
+  // ================= BULLETS =================
+  for (int i = bullets.size()-1; i >= 0; i--) {
+
+    Bullet b = bullets.get(i);
+
+    b.move();
+    b.display();
+
+    if (b.offScreen()) {
+      bullets.remove(i);
+      continue;
     }
 
-    // Display Rocks
-    for (int i = 0; i < rocks.size(); i++) {
-      Rock rock = rocks.get(i);
-
-      rock.display();
-
-      if (tank.collide(rock)) {
-        tank.health-= 10;
-        // Gameover Check
-        if (tank.health<1) gameOver = true;
-        rocks.remove(i);
-        i--;
-        continue;
-      }
-    }
-
-
-    // Distribute enemies on a timer
-    if (enemyTimer.isFinished()) {
-      enemies.add(new EnemyTank());
-      enemyTimer.start();
-    }
-
-    // Display Enemies
-    for (int i = 0; i < enemies.size(); i++) {
-      EnemyTank e = enemies.get(i);
-
-      e.move();
-      e.display();
-
-      if (tank.collide(e)) {
-        tank.health-= 10;
-        // Gameover Check
-        if (tank.health<1) gameOver = true;
-        enemies.remove(i);
-        i--;
-        continue;
-      }
-    }
-
-    // Display + update bullets
-    for (int i = 0; i < bullets.size(); i++) {
-      Bullet b = bullets.get(i);
-
-      b.move();
-      b.display();
-
-      // Remove if off screen
-      if (b.offSceen()) {
+    // ROCK COLLISION
+    for (int j = rocks.size()-1; j >= 0; j--) {
+      if (b.intersect(rocks.get(j))) {
+        rocks.remove(j);
         bullets.remove(i);
-        i--;
-        continue;
-      }
-
-      // Bullet hits rocks
-      for (int j = 0; j < rocks.size(); j++) {
-        Rock r = rocks.get(j);
-
-        if (b.intersect(r)) {
-          score += 5;
-          rocks.remove(j);
-          bullets.remove(i);
-          i--;
-          break;
-        }
-      }
-
-      // Bullet hits enemies
-      for (int j = 0; j < enemies.size(); j++) {
-        EnemyTank e = enemies.get(j);
-
-        if (b.intersect(e)) {
-          e.health -= 35;
-          if (e.health<=0) {
-            showExplosion = true;
-            explosionStartTime = millis();
-            explosionX = e.x;
-            explosionY = e.y;
-            enemies.remove(j);
-            score += 10;
-          }
-          bullets.remove(i);
-          i--;
-          break;
-        }
+        score += 5;
+        break;
       }
     }
-    
-    if(showExplosion) {
-      imageMode(CENTER);
-      image(explosion, explosionX, explosionY);
-      
-      if(millis() - explosionStartTime > 2000) {
-        showExplosion = false;
+
+    if (i >= bullets.size()) continue;
+
+    // ENEMY COLLISION
+    for (int j = enemies.size()-1; j >= 0; j--) {
+      EnemyTank e = enemies.get(j);
+
+      if (b.intersect(e)) {
+        e.health -= bulletDamage;
+
+        if (e.health <= 0) {
+          triggerExplosion(e.x, e.y, 100); // SMALL explosion
+          enemies.remove(j);
+          score += 10;
+        }
+
+        bullets.remove(i);
+        break;
       }
     }
-    
+  }
 
+  // ================= POWERUPS =================
+  if (puTimer.isFinished()) {
+    powups.add(new PowerUp());
+    puTimer.start();
+  }
 
+  for (int i = powups.size()-1; i >= 0; i--) {
+    PowerUp pu = powups.get(i);
+    pu.display();
 
-    if (gameOver) {
-      gameOver();
-      return;
+    if (pu.intersect(tank)) {
+
+      if (pu.type == 'H') {
+        tank.health = min(tank.health + 30, 100);
+      } else if (pu.type == 'K') {
+        triggerExplosion(width/2, height/2, width); // BIG explosion
+        enemies.clear();
+      } else if (pu.type == 'S') {
+        speedOn = true;
+        sTimer.start();
+        tank.speed = tank.baseSpeed + 2;
+      } else if (pu.type == 'D') {
+        damageOn = true;
+        dTimer.start();
+        bulletDamage = baseDamage + 35;
+      }
+
+      powups.remove(i);
+    }
+  }
+
+  // ================= TIMERS =================
+  if (speedOn && sTimer.isFinished()) {
+    speedOn = false;
+    tank.speed = tank.baseSpeed;
+  }
+
+  if (damageOn && dTimer.isFinished()) {
+    damageOn = false;
+    bulletDamage = baseDamage;
+  }
+
+  // ================= EXPLOSION DRAW =================
+  if (showExplosion) {
+    imageMode(CENTER);
+    image(explosion, explosionX, explosionY, explosionSize, explosionSize);
+
+    if (millis() - explosionStartTime > 2000) {
+      showExplosion = false;
     }
   }
 }
 
+// ================= EXPLOSION FUNCTION =================
+void triggerExplosion(float x, float y, float size) {
+  showExplosion = true;
+  explosionStartTime = millis();
+  explosionX = x;
+  explosionY = y;
+  explosionSize = size;
+}
 
+// ================= INPUT =================
 
-
-
-
-//Check If Key Is Being Pressed For Movement
 void keyPressed() {
-  if (key == 'w' || key == 'W') {
-    upPressed = true;
-  }
-  if (key == 'a' || key == 'A') {
-    leftPressed = true;
-  }
-  if (key == 's' || key == 'S') {
-    downPressed = true;
-  }
-  if (key == 'd' || key == 'D') {
-    rightPressed = true;
-  }
-  if (keyCode == UP) {
-    upPressed = true;
-  }
-  if (keyCode == DOWN) {
-    downPressed = true;
-  }
-  if (keyCode == LEFT) {
-    leftPressed = true;
-  }
-  if (keyCode == RIGHT) {
-    rightPressed = true;
-  }
+  if (key == 'w' || key == 'W') upPressed = true;
+  if (key == 's' || key == 'S') downPressed = true;
+  if (key == 'a' || key == 'A') leftPressed = true;
+  if (key == 'd' || key == 'D') rightPressed = true;
 
-  if (key == ' ') {
-    tank.shoot();
-  }
+  if (key == ' ') tank.shoot();
+}
+
+void keyReleased() {
+  if (key == 'w' || key == 'W') upPressed = false;
+  if (key == 's' || key == 'S') downPressed = false;
+  if (key == 'a' || key == 'A') leftPressed = false;
+  if (key == 'd' || key == 'D') rightPressed = false;
 }
 
 void mousePressed() {
   tank.shoot();
 }
 
+// ================= GAME OVER =================
 
-
-
-//Check If Key Is Being Released
-void keyReleased() {
-  if (key == 'w' || key == 'W') {
-    upPressed = false;
-  }
-  if (key == 'd' || key == 'D') {
-    rightPressed = false;
-  }
-  if (key == 's' || key == 'S') {
-    downPressed = false;
-  }
-  if (key == 'a' || key == 'A') {
-    leftPressed = false;
-  }
-  if (keyCode == UP) {
-    upPressed = false;
-  }
-  if (keyCode == DOWN) {
-    downPressed = false;
-  }
-  if (keyCode == LEFT) {
-    leftPressed = false;
-  }
-  if (keyCode == RIGHT) {
-    rightPressed = false;
-  }
-}
-
-
-
-
-
-void gameOver() {
+void gameOverScreen() {
   background(0);
   boom.play();
+
   imageMode(CENTER);
-  image(explosion, tank.x, tank.y);
+  image(explosion, tank.x, tank.y, 200, 200);
+
   fill(255);
   textAlign(CENTER);
   textSize(50);
-  text("Game Over", width / 2, height / 2 - 20);
-  //textSize(30);
-  //text("You Received A Score Of:", width / 2, height / 2 + 50);
-  //text(score, width / 2 + 190, height / 2 + 50);
+  text("Game Over", width/2, height/2);
+
   noLoop();
 }
 
-
-
-
+// ================= START =================
 
 void startScreen() {
   background(200);
   textAlign(CENTER);
   textSize(50);
-  text("Tank Game", width / 2, height / 2 - 40);
+  text("Tank Game", width/2, height/2 - 40);
   textSize(20);
-  text("Click Mouse To Start", width / 2, height / 2 + 20);
+  text("Click Mouse To Start", width/2, height/2 + 20);
+
   if (mousePressed) start = true;
 }
 
+// ================= UI =================
 
+void infoPanel() {
+  rectMode(CENTER);
+  fill(127, 127);
+  rect(width/2, 25, width, 50);
 
-  void infoPanel() {
-    rectMode(CENTER);
-    fill(127, 127);
-    rect(width / 2, 25, width, 50);
-    fill(225);
-    textSize(25);
-    text("Score: " + score, width/2, 25);
-    text("Health: " + tank.health, (width / 2)/2, 25);
-  }
+  fill(255);
+  textSize(20);
+  text("Score: " + score, width/2, 25);
+  text("Health: " + tank.health, width/2 - 150, 25);
+  text("Damage: " + bulletDamage, width/2 + 150, 25);
+
+  rectMode(CORNER);
+
+  fill(230);
+  rect(tank.x - 50, tank.y + 50, 110, 12);
+
+  fill(255, 0, 0);
+  rect(tank.x - 45, tank.y + 52, tank.health, 7);
+}

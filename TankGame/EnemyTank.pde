@@ -84,13 +84,4 @@ class EnemyTank {
 
   void shoot() {
   }
-
-  boolean collide(Rock r) {
-    float d = dist(x, y, r.x, r.y);
-    if (d< r.w) {
-      return true;
-    } else {
-      return false;
-    }
-  }
 }

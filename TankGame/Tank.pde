@@ -75,7 +75,7 @@ class Tank {
   
   boolean collide(EnemyTank t) {
     float d = dist(x, y, t.x, t.y);
-    if (d< t.w-10) {
+    if (d< t.w-15) {
       return true;
     } else {
       return false;

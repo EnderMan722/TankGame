@@ -1,4 +1,4 @@
-// Ender Hale | Tank Game | FIXED EXPLOSION SYSTEM
+// Ender Hale | Tank Game | April 15 2026
 
 import processing.sound.*;
 
@@ -10,6 +10,7 @@ ArrayList<Rock> rocks = new ArrayList<Rock>();
 ArrayList<EnemyTank> enemies = new ArrayList<EnemyTank>();
 ArrayList<Bullet> bullets = new ArrayList<Bullet>();
 ArrayList<PowerUp> powups = new ArrayList<PowerUp>();
+ArrayList<Explosion> explosions = new ArrayList<Explosion>();
 
 boolean upPressed, downPressed, leftPressed, rightPressed;
 boolean gameOverState, start;
@@ -22,14 +23,21 @@ Timer sTimer, dTimer;
 
 boolean speedOn, damageOn;
 
-// ===== EXPLOSION SYSTEM =====
-boolean showExplosion = false;
-int explosionStartTime = 0;
-float explosionX, explosionY;
-float explosionSize = 100;
+int enemySpawnTime = 750;
+int lastDifficultyIncrease = 0;
+
+// ========== Tank Flash variables ==========
+boolean tankFlash = false;
+int tankFlashStart = 0;
+
+boolean enemyFlash = false;
+int enemyFlashStart = 0;
+int enemyFlashIndex = -1;
+
 
 int score;
 
+// ================= SETUP =================
 void setup() {
   size(750, 750);
 
@@ -38,9 +46,10 @@ void setup() {
   baseDamage = 35;
   bulletDamage = baseDamage;
 
-  rockTimer = new Timer(800);
-  enemyTimer = new Timer(500);
-  puTimer = new Timer(1000);
+  rockTimer = new Timer(1000);
+  enemySpawnTime = 750;
+  enemyTimer = new Timer(enemySpawnTime);
+  puTimer = new Timer(4000);
 
   rockTimer.start();
   enemyTimer.start();
@@ -49,19 +58,20 @@ void setup() {
   sTimer = new Timer(5000);
   dTimer = new Timer(5000);
 
+  lastDifficultyIncrease = millis();
+
   gameOverState = false;
   start = false;
 
   boom = new SoundFile(this, "boom.wav");
-
   explosion = loadImage("explosion.png");
-
   bgImg = loadImage("background.png");
   bgImg.resize(width, height);
 
   score = 0;
 }
 
+// ================= MAIN GAME LOOP =================
 void draw() {
 
   if (!start) {
@@ -79,8 +89,21 @@ void draw() {
 
   infoPanel();
 
-  tank.move();
+  // ==== Tank flash and movement ====
+  if (tankFlash) {
+    if (millis() - tankFlashStart < 120) {
+      tint(255, 120); // white flash
+    } else {
+      tankFlash = false;
+      noTint();
+    }
+  } else {
+    noTint();
+  }
+
   tank.display();
+  noTint();
+  tank.move();
 
   // ================= ROCKS =================
   if (rockTimer.isFinished()) {
@@ -95,8 +118,13 @@ void draw() {
     if (tank.collide(r)) {
       tank.health -= 10;
       rocks.remove(i);
+      tankFlash = true;
+      tankFlashStart = millis();
 
-      if (tank.health <= 0) gameOverState = true;
+      if (tank.health <= 0) {
+        triggerExplosion(tank.x, tank.y);
+        gameOverState = true;
+      }
     }
   }
 
@@ -110,13 +138,31 @@ void draw() {
     EnemyTank e = enemies.get(i);
 
     e.move();
+    if (enemyFlash && enemyFlashIndex == i) {
+      if (millis() - enemyFlashStart < 120) {
+        tint(255, 120); // flash
+      } else {
+        enemyFlash = false;
+        enemyFlashIndex = -1;
+        noTint();
+      }
+    } else {
+      noTint();
+    }
+
     e.display();
+    noTint();
 
     if (tank.collide(e)) {
       tank.health -= 10;
       enemies.remove(i);
+      tankFlash = true;
+      tankFlashStart = millis();
 
-      if (tank.health <= 0) gameOverState = true;
+      if (tank.health <= 0) {
+        triggerExplosion(tank.x, tank.y);
+        gameOverState = true;
+      }
     }
   }
 
@@ -133,7 +179,6 @@ void draw() {
       continue;
     }
 
-    // ROCK COLLISION
     for (int j = rocks.size()-1; j >= 0; j--) {
       if (b.intersect(rocks.get(j))) {
         rocks.remove(j);
@@ -145,15 +190,17 @@ void draw() {
 
     if (i >= bullets.size()) continue;
 
-    // ENEMY COLLISION
     for (int j = enemies.size()-1; j >= 0; j--) {
       EnemyTank e = enemies.get(j);
 
       if (b.intersect(e)) {
+        enemyFlash = true;
+        enemyFlashStart = millis();
+        enemyFlashIndex = j;
         e.health -= bulletDamage;
 
         if (e.health <= 0) {
-          triggerExplosion(e.x, e.y, 100); // SMALL explosion
+          triggerExplosion(e.x, e.y);
           enemies.remove(j);
           score += 10;
         }
@@ -179,8 +226,14 @@ void draw() {
       if (pu.type == 'H') {
         tank.health = min(tank.health + 30, 100);
       } else if (pu.type == 'K') {
-        triggerExplosion(width/2, height/2, width); // BIG explosion
-        enemies.clear();
+
+        int kills = min(5, enemies.size());
+
+        for (int j = 0; j < kills; j++) {
+          EnemyTank e = enemies.remove(enemies.size() - 1);
+          triggerExplosion(e.x, e.y);
+          score += 10;
+        }
       } else if (pu.type == 'S') {
         speedOn = true;
         sTimer.start();
@@ -188,7 +241,9 @@ void draw() {
       } else if (pu.type == 'D') {
         damageOn = true;
         dTimer.start();
-        bulletDamage = baseDamage + 35;
+        bulletDamage = baseDamage + 100;
+      } else if (pu.type == 'M') {
+        enemies.clear();
       }
 
       powups.remove(i);
@@ -206,28 +261,39 @@ void draw() {
     bulletDamage = baseDamage;
   }
 
-  // ================= EXPLOSION DRAW =================
-  if (showExplosion) {
-    imageMode(CENTER);
-    image(explosion, explosionX, explosionY, explosionSize, explosionSize);
+  // ================= DIFFICULTY SCALING =================
+  if (millis() - lastDifficultyIncrease > 5000) {
 
-    if (millis() - explosionStartTime > 2000) {
-      showExplosion = false;
+    if (enemySpawnTime > 150) {
+      enemySpawnTime -= 50;
+    }
+
+    enemyTimer.stop();
+    enemyTimer.setTime(enemySpawnTime);
+    enemyTimer.start();
+
+    lastDifficultyIncrease = millis();
+  }
+
+  // ================= EXPLOSION SYSTEM =================
+  for (int i = explosions.size() - 1; i >= 0; i--) {
+    Explosion ex = explosions.get(i);
+
+    imageMode(CENTER);
+    image(explosion, ex.x, ex.y);
+
+    if (ex.isDone()) {
+      explosions.remove(i);
     }
   }
 }
 
 // ================= EXPLOSION FUNCTION =================
-void triggerExplosion(float x, float y, float size) {
-  showExplosion = true;
-  explosionStartTime = millis();
-  explosionX = x;
-  explosionY = y;
-  explosionSize = size;
+void triggerExplosion(float x, float y) {
+  explosions.add(new Explosion(x, y));
 }
 
 // ================= INPUT =================
-
 void keyPressed() {
   if (key == 'w' || key == 'W') upPressed = true;
   if (key == 's' || key == 'S') downPressed = true;
@@ -249,13 +315,11 @@ void mousePressed() {
 }
 
 // ================= GAME OVER =================
-
 void gameOverScreen() {
   background(0);
-  boom.play();
 
   imageMode(CENTER);
-  image(explosion, tank.x, tank.y, 200, 200);
+  image(explosion, tank.x, tank.y);
 
   fill(255);
   textAlign(CENTER);
@@ -265,8 +329,7 @@ void gameOverScreen() {
   noLoop();
 }
 
-// ================= START =================
-
+// ================= START SCREEN =================
 void startScreen() {
   background(200);
   textAlign(CENTER);
@@ -279,7 +342,6 @@ void startScreen() {
 }
 
 // ================= UI =================
-
 void infoPanel() {
   rectMode(CENTER);
   fill(127, 127);

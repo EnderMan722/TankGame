@@ -15,7 +15,7 @@ class Timer {
     savedTime = millis();
     running = true;
   }
-  
+
   // Stop the timer manually
   void stop() {
     running = false;
@@ -27,5 +27,10 @@ class Timer {
 
     int passedTime = millis() - savedTime;
     return passedTime > totalTime;
+  }
+
+
+  void setTime(int t) {
+    totalTime = t;
   }
 }

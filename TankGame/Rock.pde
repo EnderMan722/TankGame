@@ -7,16 +7,17 @@ class Rock {
   // Constructors
   Rock() {
     rockImage = loadImage("rock.png");
-    w = int(random(40, 80));
+    w = int(random(80, 120));
 
     float minDistTank = 150; // Distance away from tank
     boolean valid;
 
     do {
       valid = true;
+      int margin = 100;
 
-      x = int(random(width-10));
-      y = int(random(height-10));
+      x = int(random(width-margin));
+      y = int(random(height-margin));
 
       // Check distance from tank
       if (dist(x, y, tank.x, tank.y) < minDistTank) {

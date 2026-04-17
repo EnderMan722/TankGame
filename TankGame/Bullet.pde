@@ -9,8 +9,8 @@ class Bullet {
     this.x = x;
     this.y = y;
     this.angle = angle;
-    w = 30;
-    h = 30;
+    w = bulletSize;
+    h = bulletSize;
     speed = 5;
     bullet = loadImage("bullet.png");
   }

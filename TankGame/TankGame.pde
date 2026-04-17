@@ -5,6 +5,7 @@ import processing.sound.*;
 Tank tank;
 int bulletDamage;
 int baseDamage;
+int bulletSize;
 
 ArrayList<Rock> rocks = new ArrayList<Rock>();
 ArrayList<EnemyTank> enemies = new ArrayList<EnemyTank>();
@@ -45,9 +46,10 @@ void setup() {
 
   baseDamage = 35;
   bulletDamage = baseDamage;
+  bulletSize = 30;
 
   rockTimer = new Timer(1000);
-  enemySpawnTime = 750;
+  enemySpawnTime = 1000;
   enemyTimer = new Timer(enemySpawnTime);
   puTimer = new Timer(4000);
 
@@ -83,6 +85,7 @@ void draw() {
     gameOverScreen();
     return;
   }
+  println(bullets.size());
 
   imageMode(CENTER);
   image(bgImg, width/2, height/2);
@@ -241,9 +244,15 @@ void draw() {
       } else if (pu.type == 'D') {
         damageOn = true;
         dTimer.start();
+        bulletSize = 50;
         bulletDamage = baseDamage + 100;
       } else if (pu.type == 'M') {
-        enemies.clear();
+        int killsPM = enemies.size();
+        for (int j = 0; j < killsPM; j++) {
+          EnemyTank e = enemies.remove(enemies.size() - 1);
+          triggerExplosion(e.x, e.y);
+          score += 10;
+        }
       }
 
       powups.remove(i);
@@ -259,6 +268,7 @@ void draw() {
   if (damageOn && dTimer.isFinished()) {
     damageOn = false;
     bulletDamage = baseDamage;
+    bulletSize = 30;
   }
 
   // ================= DIFFICULTY SCALING =================
@@ -300,7 +310,7 @@ void keyPressed() {
   if (key == 'a' || key == 'A') leftPressed = true;
   if (key == 'd' || key == 'D') rightPressed = true;
 
-  if (key == ' ') tank.shoot();
+  if (key == ' ' && start && !gameOverState) tank.shoot();
 }
 
 void keyReleased() {
@@ -311,7 +321,14 @@ void keyReleased() {
 }
 
 void mousePressed() {
-  tank.shoot();
+  if (!start) {
+    start = true;
+    return;
+  }
+
+  if (!gameOverState) {
+    tank.shoot();
+  }
 }
 
 // ================= GAME OVER =================
@@ -337,8 +354,6 @@ void startScreen() {
   text("Tank Game", width/2, height/2 - 40);
   textSize(20);
   text("Click Mouse To Start", width/2, height/2 + 20);
-
-  if (mousePressed) start = true;
 }
 
 // ================= UI =================

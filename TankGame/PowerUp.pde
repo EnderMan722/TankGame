@@ -3,14 +3,16 @@ class PowerUp {
   int powNum;
   char type;
   color c1;
+  PImage clock;
 
   PowerUp() {
     w = 50;
-    powNum = int(random(1, 14));
+    powNum = int(random(1, 16));
+    clock = loadImage("watch.png");
 
     float minDistTank = 150;
     boolean valid;
-    
+
     // Random Positioning but not near player
     do {
       int margin = 100;
@@ -23,7 +25,7 @@ class PowerUp {
       }
     } while (!valid);
 
-    // Chances and setting type and color of each powerup 
+    // Chances and setting type and color of each powerup
     if (powNum <=3) {
       type = 'H';
       c1 = color(255, 20, 20);
@@ -36,6 +38,9 @@ class PowerUp {
     } else if (powNum<=12) {
       type = 'D';
       c1 = color(#00F01D);
+    } else if (powNum<=14) {
+      type = 'T';
+      c1 = color(#FFBC00);
     } else {
       type = 'M';
       c1 = color(#0AFFF1);
@@ -47,7 +52,12 @@ class PowerUp {
     ellipse(x, y, w, w);
     textSize(35);
     fill(255);
-    text(type, x, y+10);
+    if (type == 'T') {
+      clock.resize(35, 35);
+      image(clock, x, y);
+    } else {
+      text(type, x, y+10);
+    }
   }
 
   boolean intersect(Tank t) {

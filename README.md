@@ -7,7 +7,7 @@ Take control of a green tank and battle across a rocky desert battlefield. Destr
 * Difficulty Scaling
 * Powerups
 
-https://github.com/user-attachments/assets/5bda5cf7-a12f-4f17-a930-35b6548fae43
+[https://github.com/user-attachments/assets/5bda5cf7-a12f-4f17-a930-35b6548fae43](https://github.com/user-attachments/assets/b0073ceb-263b-4be4-bbd1-db88bf39bd98)
 
 ### Source Code
 * [Source Code](https://github.com/EnderMan722/TankGame/tree/main/TankGame)

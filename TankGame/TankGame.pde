@@ -50,7 +50,7 @@ void setup() {
   bulletSize = 30;
 
   rockTimer = new Timer(1000);
-  enemySpawnTime = 1000;
+  enemySpawnTime = 750;
   enemyTimer = new Timer(enemySpawnTime);
   puTimer = new Timer(4000);
 

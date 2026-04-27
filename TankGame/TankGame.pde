@@ -7,6 +7,7 @@ Tank tank;
 int bulletDamage;
 int baseDamage;
 int bulletSize;
+float enemySpeed;
 
 ArrayList<Rock> rocks = new ArrayList<Rock>();
 ArrayList<EnemyTank> enemies = new ArrayList<EnemyTank>();
@@ -21,9 +22,9 @@ PImage explosion, bgImg;
 SoundFile boom;
 
 Timer rockTimer, enemyTimer, puTimer;
-Timer sTimer, dTimer;
+Timer sTimer, dTimer, tTimer;
 
-boolean speedOn, damageOn;
+boolean speedOn, damageOn, slowOn;
 
 int enemySpawnTime = 750;
 int lastDifficultyIncrease = 0;
@@ -48,6 +49,12 @@ void setup() {
   baseDamage = 35;
   bulletDamage = baseDamage;
   bulletSize = 30;
+  
+  speedOn = false;
+  slowOn = false;
+  damageOn = false;
+  
+  enemySpeed = 1.25;
 
   rockTimer = new Timer(1000);
   enemySpawnTime = 750;
@@ -60,6 +67,7 @@ void setup() {
 
   sTimer = new Timer(5000);
   dTimer = new Timer(5000);
+  tTimer = new Timer(5000);
 
   lastDifficultyIncrease = millis();
 
@@ -247,6 +255,10 @@ void draw() {
         dTimer.start();
         bulletSize = 50;
         bulletDamage = baseDamage + 100;
+      } else if (pu.type == 'T') {
+        slowOn = true;
+        tTimer.start();
+        enemySpeed = 0.5;
       } else if (pu.type == 'M') {
         int killsPM = enemies.size();
         for (int j = 0; j < killsPM; j++) {
@@ -270,6 +282,11 @@ void draw() {
     damageOn = false;
     bulletDamage = baseDamage;
     bulletSize = 30;
+  }
+  
+  if (slowOn && tTimer.isFinished()) {
+    slowOn = false;
+    enemySpeed = 1.25;
   }
 
   // ================= DIFFICULTY SCALING =================

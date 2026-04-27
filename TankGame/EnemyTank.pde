@@ -2,14 +2,13 @@ class EnemyTank {
   // Member variables
   float x, y;
   float angle;
-  float speed, health;
+  float health;
   int w, h;
   PImage enemyTankImage;
 
 
   // Constructors
   EnemyTank() {
-    speed = 1.25;
     health = 100;
     w = 100;
     h = 100;
@@ -72,8 +71,8 @@ class EnemyTank {
     }
 
     // Move forward
-    x += cos(angle) * speed;
-    y += sin(angle) * speed;
+    x += cos(angle) * enemySpeed;
+    y += sin(angle) * enemySpeed;
 
     // Wrap around screen
     if (x > width + w/2) x = 0 - w/2;

@@ -8,7 +8,7 @@ Take control of a green tank and battle across a rocky desert battlefield. Destr
 * Powerups
 
 ### Gameplay
-
+https://github.com/user-attachments/assets/b9dedefc-3a3e-4102-96a5-b53d5b6b658c
 
 ## Powerups
 * Health - Heals

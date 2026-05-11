@@ -26,7 +26,7 @@ Timer sTimer, dTimer, tTimer;
 
 boolean speedOn, damageOn, slowOn;
 
-int enemySpawnTime = 750;
+int enemySpawnTime;
 int lastDifficultyIncrease = 0;
 
 // ========== Tank Flash variables ==========
@@ -49,15 +49,15 @@ void setup() {
   baseDamage = 35;
   bulletDamage = baseDamage;
   bulletSize = 30;
-  
+
   speedOn = false;
   slowOn = false;
   damageOn = false;
-  
+
   enemySpeed = 1.25;
 
   rockTimer = new Timer(1000);
-  enemySpawnTime = 750;
+  enemySpawnTime = 875;
   enemyTimer = new Timer(enemySpawnTime);
   puTimer = new Timer(4000);
 
@@ -283,7 +283,7 @@ void draw() {
     bulletDamage = baseDamage;
     bulletSize = 30;
   }
-  
+
   if (slowOn && tTimer.isFinished()) {
     slowOn = false;
     enemySpeed = 1.25;
@@ -329,6 +329,19 @@ void keyPressed() {
   if (key == 'd' || key == 'D') rightPressed = true;
 
   if (key == ' ' && start && !gameOverState) tank.shoot();
+
+  if (key == ' ' && gameOverState) {
+    gameOverState = false;
+    start = false;
+    tank.health = 100;
+    score = 0;
+    enemies.clear();
+    powups.clear();
+    rocks.clear();
+    loop();
+    tank.x = width/2;
+    tank.y = height/2;
+  }
 }
 
 void keyReleased() {
@@ -360,6 +373,9 @@ void gameOverScreen() {
   textAlign(CENTER);
   textSize(50);
   text("Game Over", width/2, height/2);
+  textSize(30);
+  text("Score: " + score, width/2, height/2+75);
+  text("Press Space to Restart", width/2, height/2+150);
 
   noLoop();
 }
@@ -368,10 +384,18 @@ void gameOverScreen() {
 void startScreen() {
   background(200);
   textAlign(CENTER);
-  textSize(50);
-  text("Tank Game", width/2, height/2 - 40);
+  textSize(75);
+  text("Tank Game", width/2, height/2 - 80);
+  textSize(15);
+  text("Made by Ender Hale", width/2, height/2-40);
+  textSize(30);
+  text("Click Mouse To Start", width/2, height/2 + 35);
   textSize(20);
-  text("Click Mouse To Start", width/2, height/2 + 20);
+  text("Arrow keys/WASD to move", width/2, height/2 + 100);
+  text("Mouse click/space to shoot", width/2, height/2 + 125);
+  text("Collect powerups", width/2, height/2 + 150);
+  text("Shoot enemies", width/2, height/2 + 175);
+  text("Survive and get high score", width/2, height/2 + 200);
 }
 
 // ================= UI =================
